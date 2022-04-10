@@ -1,0 +1,72 @@
+<html>
+    <head>
+        <title>
+            Test page c:
+        </title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    </head>
+    <body>
+        <button id="evilButton">
+            Create 100,000 users and hope that my code can handle it!
+        </button>
+        <form id="uploadImage" action="/api/changePfp" method="POST" enctype="multipart/form-data">
+            <input type="text" name="username" placeholder="username"></input>
+            <input type="file" name="filetoupload"></input>
+            <button type="submit">Upload Image</button>
+        </form>
+        <form id="searchUser">
+            <input type="text" name="username" placeholder="username"></input>
+            <button type="submit">Search User</button>
+        </form>
+        <div id="IDontKnowWhatImDoing">
+
+        </div>
+        <script>
+            //3 helper functions from stack overflow to save me time <3
+            function makeid(length) {
+                var result = '';
+                var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                var charactersLength = characters.length;
+                for (var i = 0; i < length; i++) {
+                    result += characters.charAt(Math.floor(Math.random() *
+                        charactersLength));
+                }
+                return result;
+            }
+            function randomIntFromInterval(min, max) { // min and max included 
+                return Math.floor(Math.random() * (max - min + 1) + min)
+            }
+            function calculate_age(dob) {
+                var diff_ms = Date.now() - dob.getTime();
+                var age_dt = new Date(diff_ms);
+
+                return Math.abs(age_dt.getUTCFullYear() - 1970);
+            }
+            $('#evilButton').click((e) => {
+                $.post('/api/createUser?q=100000', (data, status) => {});
+            });
+            $('#searchUser').submit((e) => {
+                e.preventDefault(); 
+                $.get(('/api/user/' + $('#searchUser').serializeArray()[0].value), (data, status) => {
+                    console.log(status);
+                    if(status=="success"){
+                        imageLocation = data.profilePicture;
+                        Name = data.name;
+                        username = data.username;
+                        dob = data.dob;
+                        bio = data.bio
+                        $('#IDontKnowWhatImDoing').html('<img src="' + imageLocation + '"><p>Name: ' + Name +'</p><p>username: ' + username + '</p><p>Date of Birth: ' + dob + '</p><p>age: ' + calculate_age(new Date(Date.parse(dob))) + '</p><p>bio: ' + bio + '</p>');
+                    }
+                    else if (status=="nocontent"){
+                        $('#IDontKnowWhatImDoing').html("No user found");
+                    } else if (status=="error"){
+                        $('#IDontKnowWhatImDoing').html("internal server error");
+                    } else {
+                        $('#IDontKnowWhatImDoing').html("I Dont know what went wrong... but something happened that wasn't supposed to...");
+                    }
+
+                });
+            });
+        </script>
+    </body>
+</html>
