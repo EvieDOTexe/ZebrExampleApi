@@ -10,7 +10,16 @@ const { update } = require('./models/user');
 const app = express();
 app.use(express.json());
 
-// Helper Functions
+
+// For monog db :D
+const databaseURI = '';
+mongoose.connect(databaseURI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then((result) => console.log('Connected to database c:'))
+  .catch((error) => console.log(`There was an error:\n${error}`));
+
+const port = process.env.PORT || 8080;
+
+// -------------- Helper Functions from stack overflow to calculate age and create random data. --------------
 function makeid(length) {
   var result = '';
   var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -33,20 +42,13 @@ function calculate_age(dob) {
 
 
 
-
-// For monog db :D
-const databaseURI = 'mongodb+srv://GeorgieDOTexe:GeorgieDOTexe123@mycluster.fvj3w.mongodb.net/ZebrExample?retryWrites=true&w=majority';
-mongoose.connect(databaseURI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then((result) => console.log('Connected to database c:'))
-  .catch((error) => console.log(`There was an error:\n${error}`));
-
-const port = process.env.PORT || 8080;
-
-// Create data.
+// -------------- Create Data. --------------
 app.post('/api/createUser', (req, res) => {
 
+  // if there is url arguement 'q' it will attempt to create q users with random data.
+  // otherwise it will attempt to create a user from request body data. No validation is carried out.
   if (req.query.q){
-    let userArray = [];
+    let userArray = []; //empty array to later push to the db
     for (let i = 0; i< parseInt(req.query.q); i++){
       let age = new Date(randomIntFromInterval(1900, 2004), randomIntFromInterval(0, 11), randomIntFromInterval(1, 28)); // this is just dummy data anyway :) 
       userArray.push({
@@ -58,7 +60,7 @@ app.post('/api/createUser', (req, res) => {
       });
     }
     User.insertMany(userArray);
-    return res.send("Created Accounts...");
+    return res.send({"success":"Created Accounts..."});
   }
   let age = new Date(parseInt(req.body.y), (parseInt(req.body.m) - 1), parseInt(req.body.d));
   const user = new User({
@@ -68,6 +70,7 @@ app.post('/api/createUser', (req, res) => {
     currentAge: calculate_age(age)
   });
 
+  // Quick find one to check the username isnt taken c: (the only kind of validation I added for some reason???)
   User.findOne({ username: new RegExp('^' + req.params.username + '$', "i") }, (err, doc) => {
 
     if (!doc) {
@@ -77,28 +80,31 @@ app.post('/api/createUser', (req, res) => {
         })
         .catch((err) => {
           console.log(err);
-          res.status(400).send('Failed to create user data');
+          res.status(400).send({"error":'Failed to create user data'});
         });
     } else {
-      res.status(400).send('Failed to create user data');
+      res.status(400).send({"error":'Failed to create user data'});
     }
   });
   
 });
 
 app.post('/api/changePfp', (req, res) => {
+
+  // No validation of the file uploaded, or cropping, or compression of the image takes place.
+  // All of the above should probably be added.
   var form = new formidable.IncomingForm();
   form.parse(req, function (err, fields, files) {
   User.findOne({username: new RegExp('^'+fields.username+'$', "i")}, (err, doc) => {
-
+    // Literally just copies the uploaded file to the working directory.
     if (doc){
         var oldpath = files.filetoupload.filepath;
         var newpath = './userImages/' + fields.username + ".jpg";
         doc.profilePicture = newpath;
-        console.log(fields.username);
+        // 'renaming' the file to a new location threw an error, but copying seems to work :)
         fs.copyFile(oldpath, newpath, function (err) {
           if (err) throw err;
-          res.status(200).send('Uploaded New pfp');
+          res.status(200).send({"success":'Uploaded New pfp'});
         });
         doc.save();
       }
@@ -106,7 +112,7 @@ app.post('/api/changePfp', (req, res) => {
   });
 });
 
-// Retrieve data.
+// -------------- Retrieve Data. --------------
 app.get('/api/user/:username?', (req, res) => {
   // Logic to get users
 
@@ -134,44 +140,44 @@ app.get('/api/user/:username?', (req, res) => {
 
 });
 
-// Update data.
-
+// -------------- Update Data. --------------
 app.put('/api/changeBio/:username/:bio?', (req, res) => {
-    // Logic to update name
+    // Logic to update bio
     User.updateOne({username: new RegExp('^'+req.params.username+'$', "i")}, {bio: ( req.params.bio || "" )}, (err, doc) => {
-      console.log(doc);
+      //console.log(doc);
       if (err) return res.status(500).send({"error": "internal server error"});
   
-      if (doc) return res.status(200).send("Updated username");
+      if (doc.modifiedCount == 1) return res.status(200).send({"success":"Updated bio"});
       
-      return res.status(204).send({"error": "user not found"});
+      return res.status(200).send({"error": "user not found"});
   
     });
 });
 
 app.put('/api/changeName/:username/:newName', (req, res) => {
-  // Logic to update name
+  // Logic to update name, no validation again :(
   User.updateOne({username: new RegExp('^'+req.params.username+'$', "i")}, {name: req.params.newName}, (err, doc) => {
-    console.log(doc);
+    //console.log(doc);
     if (err) return res.status(500).send({"error": "internal server error"});
 
-    if (doc) return res.status(200).send("Updated username");
+    if (doc.modifiedCount == 1) return res.status(200).send({"success":"Updated username"});
     
-    return res.status(204).send({"error": "user not found"});
+    return res.status(200).send({"error": "user not found"});
 
   });
 });
 
 
-// Delete data.
+// -------------- Delete Data. --------------
 app.delete('/api/user/:username', (req, res) => {
+  // No validation, just attempts to delete the first document with that username, should only have one user with that name anyway.
   User.deleteOne({username: req.params.username})
     .then((result) => {
-      return res.status(200).send("Deleted User");
+      return res.status(200).send({"success":"Deleted User"});
     })
     .catch((err) =>{
       console.log(err);
-      return res.status(500).send("internal server error");
+      return res.status(500).send({"error":"internal server error"});
     })
 });
 
@@ -181,10 +187,12 @@ app.delete('/api/user/:username', (req, res) => {
 function updateUsers() {
 
   // Icky solution :( - but it works I guess...
+  // Goes through every account and recalculates the age. It might not be the most efficient, but it works.
   User.find({}, (err, docs) => {
     docs.forEach((doc) => {
       User.updateOne({username:doc.username}, {currentAge: calculate_age(new Date(Date.parse(doc.dob)))}, (err, document) => {
      });
+     // Could try editing 'doc' and then trying doc.save(); Not sure of the efficiency of each of these.
     });
   });
 
@@ -194,6 +202,7 @@ function updateUsers() {
 function deleteUsers() {
 
   // This solution feels gross, not even sure if I'm doing the right calculation? But hey if i'm not, thats easily changed :D
+  // Calculates the average.
   User.aggregate([
     {
       $group: {
@@ -203,22 +212,25 @@ function deleteUsers() {
     }
   ], {allowDiskUse: true})
   .then((result) => {
-    let avgAge = result[0].currentAge;
-    console.log("Average age was: " + avgAge);
+    let avgAge = result[0].currentAge; // grabs the average age calculated by mongo :D.
+    // deletes all accounts with an age that is above 30% of the average higher than the average.
     User.deleteMany({currentAge: {$gt: avgAge+((avgAge/100)*30)}}, (boo, count) => {
-      console.log(count);
+      //console.log(count);
     });
+    // deletes all accounts with an age that is below 30% of the average higher than the average.
     User.deleteMany({currentAge: {$lt: avgAge-((avgAge/100)*30)}}, (boo, count) => {
-      console.log(count);
+      //console.log(count);
     });
+    console.log('Executed user purge.')
   })
 
 }
 
+// Repeating tasks.
 setInterval(updateUsers, 60000); // Will Run the task every 10 minutes.
 setInterval(deleteUsers, 120000); // Will Run the task every 20 minutes.
 
-// Just test page for proof of concept n stuff <3
+// Just a scuffed test page to check a few things :)
 app.get('/', (req, res) => {
 
   res.sendFile(__dirname + '/index.html');
