@@ -13,7 +13,7 @@ app.use(express.json());
 
 
 // For monog db :D
-const databaseURI = 'mongodb+srv://GeorgieDOTexe:GeorgieDOTexe123@mycluster.fvj3w.mongodb.net/ZebrExample?retryWrites=true&w=majority';
+const databaseURI = '';
 mongoose.connect(databaseURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then((result) => console.log('Connected to database c:'))
   .catch((error) => console.log(`There was an error:\n${error}`));
