@@ -1,6 +1,7 @@
 const express = require('express')
 const mongoose = require('mongoose');
 const formidable = require('formidable');
+const schedule = require('node-schedule');
 const path = require('path')
 var fs = require('fs');
 
@@ -12,7 +13,7 @@ app.use(express.json());
 
 
 // For monog db :D
-const databaseURI = '';
+const databaseURI = 'mongodb+srv://GeorgieDOTexe:GeorgieDOTexe123@mycluster.fvj3w.mongodb.net/ZebrExample?retryWrites=true&w=majority';
 mongoose.connect(databaseURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then((result) => console.log('Connected to database c:'))
   .catch((error) => console.log(`There was an error:\n${error}`));
@@ -227,8 +228,10 @@ function deleteUsers() {
 }
 
 // Repeating tasks.
-setInterval(updateUsers, 60000); // Will Run the task every 10 minutes.
-setInterval(deleteUsers, 120000); // Will Run the task every 20 minutes.
+//setInterval(updateUsers, 60000); // Will Run the task every 10 minutes.
+const routineUpdateUsers = schedule.scheduleJob('*/10 * * * *', updateUsers);
+//setInterval(deleteUsers, 120000); // Will Run the task every 20 minutes.
+const routineDeleteUsers = schedule.scheduleJob('*/20 * * * *', deleteUsers);
 
 // Just a scuffed test page to check a few things :)
 app.get('/', (req, res) => {

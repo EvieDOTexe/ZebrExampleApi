@@ -17,6 +17,7 @@
     "express": "^4.17.1",
     "formidable": "^2.0.1",
     "helmet": "^4.6.0",
-    "mongoose": "^6.2.10"
+    "mongoose": "^6.2.10",
+    "node-schedule": "^2.1.0"
   }
 }

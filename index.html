@@ -23,19 +23,6 @@
         </div>
         <script>
             //3 helper functions from stack overflow to save me time <3
-            function makeid(length) {
-                var result = '';
-                var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-                var charactersLength = characters.length;
-                for (var i = 0; i < length; i++) {
-                    result += characters.charAt(Math.floor(Math.random() *
-                        charactersLength));
-                }
-                return result;
-            }
-            function randomIntFromInterval(min, max) { // min and max included 
-                return Math.floor(Math.random() * (max - min + 1) + min)
-            }
             function calculate_age(dob) {
                 var diff_ms = Date.now() - dob.getTime();
                 var age_dt = new Date(diff_ms);
